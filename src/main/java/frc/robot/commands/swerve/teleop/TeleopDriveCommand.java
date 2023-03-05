@@ -15,6 +15,8 @@ public class TeleopDriveCommand extends CommandBase {
 	private DoubleSupplier translationXSupplier, translationYSupplier;
 	private DoubleSupplier rotationSupplier;
 	private BooleanSupplier isRobotRelativeSupplier;
+	public static final double kSkewCorrectionDeadband = 0.3;
+	public static final double kSkewCorrectionRatio = 0.5;
 
 	public TeleopDriveCommand(SwerveSubsystem swerve, DoubleSupplier translationXSupplier,
 			DoubleSupplier translationYSupplier, DoubleSupplier rotationSupplier) {
@@ -41,11 +43,15 @@ public class TeleopDriveCommand extends CommandBase {
 	@Override
 	public void execute() {
 		// Get joysick values and apply deadband.
-		double translationXValue = MathUtil.applyDeadband(translationXSupplier.getAsDouble(),
-				RobotContainer.kJoystickDeadband) * this.swerve.filteredTranslationRatio;
+		double translationXValue = (MathUtil.applyDeadband(translationXSupplier.getAsDouble(),
+				RobotContainer.kJoystickDeadband)
+				+ this.calculateSkewCorrection(translationYSupplier.getAsDouble(), rotationSupplier.getAsDouble()))
+				* this.swerve.filteredTranslationRatio;
 
-		double translationYValue = MathUtil.applyDeadband(translationYSupplier.getAsDouble(),
-				RobotContainer.kJoystickDeadband) * this.swerve.filteredTranslationRatio;
+		double translationYValue = (MathUtil.applyDeadband(translationYSupplier.getAsDouble(),
+				RobotContainer.kJoystickDeadband)
+				+ this.calculateSkewCorrection(translationXSupplier.getAsDouble(), rotationSupplier.getAsDouble()))
+				* this.swerve.filteredTranslationRatio;
 
 		double rotationValue = MathUtil.applyDeadband(rotationSupplier.getAsDouble(), RobotContainer.kJoystickDeadband)
 				* this.swerve.currentSwerveRotationRatio;
@@ -56,5 +62,10 @@ public class TeleopDriveCommand extends CommandBase {
 		swerve.teleopDrive(
 				new Translation2d(translationXValue, translationYValue).times(SwerveConstants.kChassisMaxSpeedMPS),
 				rotationValue * SwerveConstants.kMaxAngularVelocityRadPS, isRobotRelative, true);
+	}
+
+	private double calculateSkewCorrection(double joystickAxis, double joystickRotation) {
+		return ((joystickRotation * MathUtil.applyDeadband((joystickAxis), TeleopDriveCommand.kSkewCorrectionDeadband))
+				* TeleopDriveCommand.kSkewCorrectionRatio);
 	}
 }
