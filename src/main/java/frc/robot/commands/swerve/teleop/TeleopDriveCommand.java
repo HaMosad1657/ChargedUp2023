@@ -45,7 +45,7 @@ public class TeleopDriveCommand extends CommandBase {
 		// Get joysick values and apply deadband.
 		double translationXValue = (MathUtil.applyDeadband(translationXSupplier.getAsDouble(),
 				RobotContainer.kJoystickDeadband)
-				+ this.calculateSkewCorrection(translationYSupplier.getAsDouble(), rotationSupplier.getAsDouble()))
+				- this.calculateSkewCorrection(translationYSupplier.getAsDouble(), rotationSupplier.getAsDouble()))
 				* this.swerve.filteredTranslationRatio;
 
 		double translationYValue = (MathUtil.applyDeadband(translationYSupplier.getAsDouble(),
